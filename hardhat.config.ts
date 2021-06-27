@@ -19,8 +19,9 @@ const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   solidity: {
     compilers: [
-      { version: "0.8.0", settings: {} },
-      { version: "0.6.5", settings: {} }
+      { version: "0.7.0", settings: {} },
+      { version: "0.6.5", settings: {} },
+      { version: "0.6.6", settings: {} }
     ],
   },
   networks: {

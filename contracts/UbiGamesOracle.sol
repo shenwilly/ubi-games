@@ -2,18 +2,19 @@
 pragma solidity ^0.6.5;
 
 import {VRFConsumerBase} from "@chainlink/contracts/src/v0.6/VRFConsumerBase.sol";
-import {Ownable} from "@openzeppelin/contracts-6-7/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IUbiGame} from "./interfaces/IUbiGame.sol";
 
 contract UbiGamesOracle is VRFConsumerBase, Ownable {
     bytes32 internal keyHash;
-    uint256 internal fee;
+    uint256 public fee;
 
     modifier onlyRegistered() {
-        _;
+      require(registered[msg.sender], "Sender not registered");
+      _;
     }
 
-    mapping(address => bool) public registeredContracts;
+    mapping(address => bool) public registered;
     mapping(bytes32 => address) public requests;
 
     constructor(
@@ -28,11 +29,11 @@ contract UbiGamesOracle is VRFConsumerBase, Ownable {
         // 0.1 * 10**18; // 0.1 LINK (Varies by network)
     }
 
-    function setRegisteredContract(address _address, bool _value)
+    function setRegistered(address _address, bool _value)
         public
         onlyOwner
     {
-        registeredContracts[_address] = _value;
+        registered[_address] = _value;
     }
 
     function requestRandomNumber()

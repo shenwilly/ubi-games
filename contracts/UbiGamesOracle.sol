@@ -13,18 +13,19 @@ contract UbiGamesOracle is VRFConsumerBase, Ownable {
         _;
     }
 
-    mapping(address => bool) registeredContracts;
-    mapping(bytes32 => address) requests;
+    mapping(address => bool) public registeredContracts;
+    mapping(bytes32 => address) public requests;
 
-    constructor()
-        public
-        VRFConsumerBase(
-            0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9, // VRF Coordinator
-            0xa36085F69e2889c224210F603D836748e7dC0088 // LINK Token
-        )
-    {
-        keyHash = 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f3;
-        fee = 0.1 * 10**18; // 0.1 LINK (Varies by network)
+    constructor(
+        address _VRF,
+        address _LINK,
+        bytes32 _keyHash,
+        uint256 _fee
+    ) public VRFConsumerBase(_VRF, _LINK) {
+        keyHash = _keyHash;
+        // 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f3;
+        fee = _fee;
+        // 0.1 * 10**18; // 0.1 LINK (Varies by network)
     }
 
     function setRegisteredContract(address _address, bool _value)
@@ -52,5 +53,10 @@ contract UbiGamesOracle is VRFConsumerBase, Ownable {
         override
     {
         IUbiGame(requests[requestId]).finalizeBet(requestId, randomness);
+    }
+
+    function withdrawLINK() public onlyOwner {
+        uint256 amount = LINK.balanceOf(address(this));
+        LINK.transfer(msg.sender, amount);
     }
 }

@@ -1,24 +1,28 @@
 import { ethers } from "hardhat";
 import chai from "chai";
-import { ERC20Mock, ERC20Mock__factory, LinkToken, LinkTokenInterface, LinkToken__factory, UbiGamesOracle, UbiGamesOracle__factory, VRFCoordinatorMock, VRFCoordinatorMock__factory } from "../typechain";
+import {
+  LinkToken,
+  LinkToken__factory,
+  UbiGamesOracle,
+  UbiGamesOracle__factory,
+  VRFCoordinatorMock__factory,
+} from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { BigNumber } from "ethers";
-import { parseUnits } from "ethers/lib/utils";
+import { Logger, parseUnits } from "ethers/lib/utils";
 
 const { expect } = chai;
 const { expectRevert } = require("@openzeppelin/test-helpers");
+Logger.setLogLevel(Logger.levels.ERROR); // LINK double Transfer event log
 
 describe("UbiGamesOracle", () => {
-  let owner: SignerWithAddress,
-      stranger: SignerWithAddress;
-  let ownerAddress: string,
-      strangerAddress: string;
+  let owner: SignerWithAddress, stranger: SignerWithAddress;
+  let ownerAddress: string, strangerAddress: string;
 
   let oracle: UbiGamesOracle;
   let link: LinkToken;
 
   beforeEach(async () => {
-    [ owner, stranger ] = await ethers.getSigners();
+    [owner, stranger] = await ethers.getSigners();
     ownerAddress = owner.address;
     strangerAddress = stranger.address;
 
@@ -32,8 +36,10 @@ describe("UbiGamesOracle", () => {
       "VRFCoordinatorMock",
       owner
     )) as VRFCoordinatorMock__factory;
-    const vrfCoordinator = await VRFCoordinatorFactory.connect(owner).deploy(link.address);
-  
+    const vrfCoordinator = await VRFCoordinatorFactory.connect(owner).deploy(
+      link.address
+    );
+
     const OracleFactory = (await ethers.getContractFactory(
       "UbiGamesOracle",
       owner
@@ -43,7 +49,7 @@ describe("UbiGamesOracle", () => {
       link.address,
       "0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f3",
       parseUnits("0.1", 18)
-    )
+    );
   });
 
   describe("setRegisteredContract()", async () => {
@@ -111,12 +117,14 @@ describe("UbiGamesOracle", () => {
       await link.connect(owner).transfer(oracle.address, parseUnits("1", 18));
       const oracleLinkBalance = await link.balanceOf(oracle.address);
       const ownerLinkBalance = await link.balanceOf(owner.address);
-      
+
       expect(await link.balanceOf(oracle.address)).to.be.gt(0);
       await oracle.connect(owner).withdrawLINK();
       expect(await link.balanceOf(oracle.address)).to.be.eq(0);
-      
-      expect(await link.balanceOf(owner.address)).to.be.eq(ownerLinkBalance.add(oracleLinkBalance));
+
+      expect(await link.balanceOf(owner.address)).to.be.eq(
+        ownerLinkBalance.add(oracleLinkBalance)
+      );
     });
   });
 });

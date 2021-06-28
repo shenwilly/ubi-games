@@ -8,6 +8,7 @@ import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IUbiGame} from "./interfaces/IUbiGame.sol";
 import {IUbiGamesOracle} from "./interfaces/IUbiGamesOracle.sol";
+import {IUbiGamesVault} from "./interfaces/IUbiGamesVault.sol";
 
 contract Ubiroll is IUbiGame, Ownable {
     using SafeMath for uint256;
@@ -24,8 +25,8 @@ contract Ubiroll is IUbiGame, Ownable {
         bytes32 oracleRequestId;
     }
 
-    address public ubi;
     address public oracle;
+    address public vault;
 
     Bet[] public bets;
     mapping(bytes32 => uint256) public oracleRequestToBet;
@@ -57,9 +58,9 @@ contract Ubiroll is IUbiGame, Ownable {
         bool win
     );
 
-    constructor(address _ubi, address _oracle) {
-        ubi = _ubi;
+    constructor(address _oracle, address _vault) {
         oracle = _oracle;
+        vault = _vault;
     }
 
     function createBet(uint256 _chance, uint256 _amount) public notPaused {
@@ -70,7 +71,7 @@ contract Ubiroll is IUbiGame, Ownable {
         uint256 prize = calculatePrize(_chance, _amount);
         require(prize < maxPrize(), "prize must be lower than maxPrize");
 
-        IERC20(ubi).transferFrom(msg.sender, address(this), _amount);
+        IUbiGamesVault(vault).gameDeposit(msg.sender, _amount);
 
         uint256 betIndex = bets.length;
         Bet memory bet;
@@ -104,15 +105,19 @@ contract Ubiroll is IUbiGame, Ownable {
         bet.finished = true;
 
         if (bet.chance >= result) {
-            IERC20(ubi).transfer(bet.player, bet.prizeAmount);
+            IUbiGamesVault(vault).gameWithdraw(bet.player, bet.prizeAmount);
             emit BetFinalized(bet.id, bet.player, bet.chance, result, true);
         } else {
             emit BetFinalized(bet.id, bet.player, bet.chance, result, false);
         }
     }
 
+    // if bet fails to resolve
     function refundBet(uint256 _betId) public onlyOwner {
-        // if finished is false
+        Bet storage bet = bets[_betId];
+        assert(bet.finished == false);
+        IUbiGamesVault(vault).gameWithdraw(bet.player, bet.betAmount);
+        emit BetFinalized(bet.id, bet.player, bet.chance, 0, false);
     }
 
     function withdrawToken(address _token, uint256 _amount) public onlyOwner {
@@ -120,7 +125,7 @@ contract Ubiroll is IUbiGame, Ownable {
     }
 
     function maxPrize() public view returns (uint256) {
-        uint256 balance = IERC20(ubi).balanceOf(address(this));
+        uint256 balance = IUbiGamesVault(vault).getUbiBalance();
         return balance.div(100);
     }
 
@@ -130,10 +135,6 @@ contract Ubiroll is IUbiGame, Ownable {
         returns (uint256)
     {
         return _amount.mul(uint256(100).sub(houseEdge)).div(_winningChance);
-    }
-
-    function setUbi(address _ubi) public onlyOwner {
-        ubi = _ubi;
     }
 
     function setOracle(address _oracle) public onlyOwner {

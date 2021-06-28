@@ -100,6 +100,14 @@ contract Ubiroll is IUbiGame, Ownable {
         bet.finished = true;
     }
 
+    function refundBet(uint256 _betId) public onlyOwner {
+        // if finished is false
+    }
+
+    function withdrawToken(address _token, uint256 _amount) public onlyOwner {
+        IERC20(_token).transfer(msg.sender, _amount);
+    }
+
     function maxPrize() public view returns (uint256) {
         uint256 balance = IERC20(ubi).balanceOf(address(this));
         return balance / 100;
@@ -111,6 +119,18 @@ contract Ubiroll is IUbiGame, Ownable {
         returns (uint256)
     {
         return (100 / _winningChance) * _amount * ((100 - houseEdge) / 100);
+    }
+
+    function setUbi(address _ubi) public onlyOwner {
+        ubi = _ubi;
+    }
+
+    function setOracle(address _oracle) public onlyOwner {
+        oracle = _oracle;
+    }
+
+    function setGamePause(bool _paused) public onlyOwner {
+        gamePaused = _paused;
     }
 
     function setHouseEdge(uint16 _houseEdge) public onlyOwner {

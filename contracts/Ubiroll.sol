@@ -21,11 +21,11 @@ contract Ubiroll is IUbiGame, Ownable {
         bytes32 oracleRequestId;
     }
 
-    address ubi;
-    address oracle;
+    address public ubi;
+    address public oracle;
 
-    Bet[] bets;
-    mapping(bytes32 => uint256) oracleRequestToBet;
+    Bet[] public bets;
+    mapping(bytes32 => uint256) public oracleRequestToBet;
     bool public gamePaused = false;
     uint16 public houseEdge = 1; // 1/100
 
@@ -118,7 +118,7 @@ contract Ubiroll is IUbiGame, Ownable {
         view
         returns (uint256)
     {
-        return (100 / _winningChance) * _amount * ((100 - houseEdge) / 100);
+        return ((100 / _winningChance) * _amount * (100 - houseEdge)) / 100;
     }
 
     function setUbi(address _ubi) public onlyOwner {

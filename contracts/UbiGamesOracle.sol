@@ -24,9 +24,7 @@ contract UbiGamesOracle is VRFConsumerBase, Ownable {
         uint256 _fee
     ) public VRFConsumerBase(_VRF, _LINK) {
         keyHash = _keyHash;
-        // 0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f3;
         fee = _fee;
-        // 0.1 * 10**18; // 0.1 LINK (Varies by network)
     }
 
     function setRegistered(address _address, bool _value) public onlyOwner {
@@ -42,6 +40,7 @@ contract UbiGamesOracle is VRFConsumerBase, Ownable {
             LINK.balanceOf(address(this)) >= fee,
             "Not enough LINK - fill contract with faucet"
         );
+
         requestId = requestRandomness(keyHash, fee);
         requests[requestId] = msg.sender;
     }

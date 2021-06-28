@@ -34,6 +34,11 @@ contract Ubiroll is IUbiGame, Ownable {
         _;
     }
 
+    modifier onlyOracle() {
+        require(msg.sender == oracle, "Sender must be oracle");
+        _;
+    }
+
     event BetCreated(
         uint256 indexed id,
         address indexed player,
@@ -83,6 +88,7 @@ contract Ubiroll is IUbiGame, Ownable {
     function finalizeBet(bytes32 _requestId, uint256 _randomness)
         public
         override
+        onlyOracle
     {
         uint256 result = (_randomness % 100) + 1;
 

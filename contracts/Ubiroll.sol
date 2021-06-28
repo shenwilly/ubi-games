@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.0;
 
+import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -94,7 +95,10 @@ contract Ubiroll is IUbiGame, Ownable {
 
         uint256 betId = oracleRequestToBet[_requestId];
         Bet storage bet = bets[betId];
+        assert(bet.oracleRequestId == _requestId);
+
         bet.result = result;
+        bet.finished = true;
 
         if (bet.chance >= result) {
             IERC20(ubi).transfer(bet.player, bet.prizeAmount);
@@ -102,8 +106,6 @@ contract Ubiroll is IUbiGame, Ownable {
         } else {
             emit BetFinalized(bet.id, bet.player, bet.chance, result, false);
         }
-
-        bet.finished = true;
     }
 
     function refundBet(uint256 _betId) public onlyOwner {

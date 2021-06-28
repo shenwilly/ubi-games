@@ -7,6 +7,8 @@ import {
   LinkToken__factory,
   UbiGamesOracle,
   UbiGamesOracle__factory,
+  UbiGamesVault,
+  UbiGamesVault__factory,
   Ubiroll,
   Ubiroll__factory,
   VRFCoordinatorMock,
@@ -21,25 +23,29 @@ const { expectRevert } = require("@openzeppelin/test-helpers");
 Logger.setLogLevel(Logger.levels.ERROR); // LINK double Transfer event log
 
 describe("Ubiroll", () => {
-  let owner: SignerWithAddress, player: SignerWithAddress;
-  let ownerAddress: string, playerAddress: string;
+  let owner: SignerWithAddress,
+    player: SignerWithAddress,
+    burner: SignerWithAddress;
+  let ownerAddress: string, playerAddress: string, burnerAddress: string;
 
   let ubiroll: Ubiroll;
   let oracle: UbiGamesOracle;
+  let vault: UbiGamesVault;
   let vrfCoordinator: VRFCoordinatorMock;
   let link: LinkToken;
   let ubi: ERC20Mock;
 
   const distributeUBIAndApprove = async () => {
-    await ubi.connect(owner).mint(ubiroll.address, parseUnits("10000", 18));
+    await ubi.connect(owner).mint(vault.address, parseUnits("10000", 18));
     await ubi.connect(owner).mint(playerAddress, parseUnits("10", 18));
-    await ubi.connect(player).approve(ubiroll.address, parseUnits("10", 18));
+    await ubi.connect(player).approve(vault.address, parseUnits("10", 18));
   };
 
   beforeEach(async () => {
-    [owner, player] = await ethers.getSigners();
+    [owner, player, burner] = await ethers.getSigners();
     ownerAddress = owner.address;
     playerAddress = player.address;
+    burnerAddress = burner.address;
 
     const LinkTokenFactory = (await ethers.getContractFactory(
       "LinkToken",
@@ -77,16 +83,27 @@ describe("Ubiroll", () => {
       parseUnits("0.1", 18)
     );
 
+    const VaultFactory = (await ethers.getContractFactory(
+      "UbiGamesVault",
+      owner
+    )) as UbiGamesVault__factory;
+    vault = await VaultFactory.connect(owner).deploy(
+      ubi.address,
+      burnerAddress,
+      25
+    );
+
     const UbirollFactory = (await ethers.getContractFactory(
       "Ubiroll",
       owner
     )) as Ubiroll__factory;
     ubiroll = await UbirollFactory.connect(owner).deploy(
-      ubi.address,
-      oracle.address
+      oracle.address,
+      vault.address
     );
 
     await oracle.connect(owner).setRegistered(ubiroll.address, true);
+    await vault.connect(owner).setRegisteredGame(ubiroll.address, true);
     await link.connect(owner).transfer(oracle.address, parseUnits("100", 18));
   });
 
@@ -245,32 +262,32 @@ describe("Ubiroll", () => {
     });
   });
 
-  describe("withdrawToken()", async () => {
-    it("should revert if not called by owner", async () => {
-      await expectRevert(
-        ubiroll.connect(player).withdrawToken(ubi.address, 1),
-        "Ownable: caller is not the owner"
-      );
-    });
-    it("should withdraw token if called by owner", async () => {
-      const ownerUbiBalance = await ubi.balanceOf(ownerAddress);
-      await ubi.connect(owner).mint(ubiroll.address, parseUnits("1", 18));
-      const contractUbiBalance = await ubi.balanceOf(ubiroll.address);
-      expect(contractUbiBalance).to.be.gt(0);
-      await ubiroll
-        .connect(owner)
-        .withdrawToken(ubi.address, contractUbiBalance),
-        expect(await ubi.balanceOf(ubiroll.address)).to.be.eq(0);
-      expect(await ubi.balanceOf(ownerAddress)).to.be.eq(
-        ownerUbiBalance.add(contractUbiBalance)
-      );
-    });
-  });
+  // describe("withdrawToken()", async () => {
+  //   it("should revert if not called by owner", async () => {
+  //     await expectRevert(
+  //       ubiroll.connect(player).withdrawToken(ubi.address, 1),
+  //       "Ownable: caller is not the owner"
+  //     );
+  //   });
+  //   it("should withdraw token if called by owner", async () => {
+  //     const ownerUbiBalance = await ubi.balanceOf(ownerAddress);
+  //     await ubi.connect(owner).mint(ubiroll.address, parseUnits("1", 18));
+  //     const contractUbiBalance = await ubi.balanceOf(ubiroll.address);
+  //     expect(contractUbiBalance).to.be.gt(0);
+  //     await ubiroll
+  //       .connect(owner)
+  //       .withdrawToken(ubi.address, contractUbiBalance),
+  //       expect(await ubi.balanceOf(ubiroll.address)).to.be.eq(0);
+  //     expect(await ubi.balanceOf(ownerAddress)).to.be.eq(
+  //       ownerUbiBalance.add(contractUbiBalance)
+  //     );
+  //   });
+  // });
 
   describe("maxPrize()", async () => {
     it("should return maxPrize", async () => {
-      await ubi.mint(ubiroll.address, parseUnits("100", 18));
-      const ubiBalance = await ubi.balanceOf(ubiroll.address);
+      await ubi.mint(vault.address, parseUnits("100", 18));
+      const ubiBalance = await ubi.balanceOf(vault.address);
       const maxPrize = ubiBalance.div(100); // 1% of balance
       expect(await ubiroll.maxPrize()).to.be.eq(maxPrize);
     });
@@ -325,21 +342,21 @@ describe("Ubiroll", () => {
     });
   });
 
-  describe("setUbi()", async () => {
-    it("should revert if not called by owner", async () => {
-      await expectRevert(
-        ubiroll.connect(player).setUbi(playerAddress),
-        "Ownable: caller is not the owner"
-      );
-    });
-    it("should set new Ubi address if called by owner", async () => {
-      const oldUbi = await ubiroll.ubi();
-      const newUbi = playerAddress;
-      expect(oldUbi).to.be.not.eq(newUbi);
-      await ubiroll.connect(owner).setUbi(newUbi);
-      expect(await ubiroll.ubi()).to.be.eq(newUbi);
-    });
-  });
+  // describe("setUbi()", async () => {
+  //   it("should revert if not called by owner", async () => {
+  //     await expectRevert(
+  //       ubiroll.connect(player).setUbi(playerAddress),
+  //       "Ownable: caller is not the owner"
+  //     );
+  //   });
+  //   it("should set new Ubi address if called by owner", async () => {
+  //     const oldUbi = await ubiroll.ubi();
+  //     const newUbi = playerAddress;
+  //     expect(oldUbi).to.be.not.eq(newUbi);
+  //     await ubiroll.connect(owner).setUbi(newUbi);
+  //     expect(await ubiroll.ubi()).to.be.eq(newUbi);
+  //   });
+  // });
   describe("setOracle()", async () => {
     it("should revert if not called by owner", async () => {
       await expectRevert(

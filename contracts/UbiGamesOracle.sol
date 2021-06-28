@@ -10,8 +10,8 @@ contract UbiGamesOracle is VRFConsumerBase, Ownable {
     uint256 public fee;
 
     modifier onlyRegistered() {
-      require(registered[msg.sender], "Sender not registered");
-      _;
+        require(registered[msg.sender], "Sender not registered");
+        _;
     }
 
     mapping(address => bool) public registered;
@@ -29,10 +29,7 @@ contract UbiGamesOracle is VRFConsumerBase, Ownable {
         // 0.1 * 10**18; // 0.1 LINK (Varies by network)
     }
 
-    function setRegistered(address _address, bool _value)
-        public
-        onlyOwner
-    {
+    function setRegistered(address _address, bool _value) public onlyOwner {
         registered[_address] = _value;
     }
 

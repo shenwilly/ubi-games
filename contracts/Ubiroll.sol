@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.0;
 
-import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -54,13 +53,15 @@ contract Ubiroll is IUbiGame, Ownable {
         oracle = _oracle;
     }
 
-    function startBet(uint256 _chance, uint256 _amount) public notPaused {
+    function createBet(uint256 _chance, uint256 _amount) public notPaused {
         require(_amount > 0, "bet amount must be greater than 0");
         require(_chance > 0, "winning chance must be greater than 0");
         require((_chance + houseEdge) < 100, "winning chance must be lower");
 
         uint256 prize = calculatePrize(_chance, _amount);
         require(prize < maxPrize(), "prize must be lower than maxPrize");
+
+        IERC20(ubi).transferFrom(msg.sender, address(this), _amount);
 
         uint256 betIndex = bets.length;
         Bet memory bet;
@@ -89,7 +90,7 @@ contract Ubiroll is IUbiGame, Ownable {
         Bet storage bet = bets[betId];
         bet.result = result;
 
-        if (bet.chance <= result) {
+        if (bet.chance >= result) {
             IERC20(ubi).transfer(bet.player, bet.prizeAmount);
             emit BetFinalized(bet.id, bet.player, bet.chance, result, true);
         } else {

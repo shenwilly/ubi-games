@@ -44,7 +44,8 @@ contract Ubiroll is IUbiGame, Ownable {
         uint256 indexed id,
         address indexed player,
         uint256 chance,
-        uint256 amount
+        uint256 amount,
+        bytes32 requestId
     );
     event BetFinalized(
         uint256 indexed id,
@@ -83,7 +84,7 @@ contract Ubiroll is IUbiGame, Ownable {
 
         oracleRequestToBet[requestId] = betIndex;
 
-        emit BetCreated(betIndex, msg.sender, _chance, _amount);
+        emit BetCreated(betIndex, msg.sender, _chance, _amount, requestId);
     }
 
     function finalizeBet(bytes32 _requestId, uint256 _randomness)

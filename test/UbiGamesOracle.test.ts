@@ -34,8 +34,6 @@ describe("UbiGamesOracle", () => {
     ownerAddress = owner.address;
     strangerAddress = stranger.address;
 
-    console.log(parseUnits("0.1", 18).toString());
-
     const LinkTokenFactory = (await ethers.getContractFactory(
       "LinkToken",
       owner

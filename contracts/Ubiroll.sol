@@ -4,11 +4,13 @@ pragma solidity ^0.7.0;
 import "hardhat/console.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IUbiGame} from "./interfaces/IUbiGame.sol";
 import {IUbiGamesOracle} from "./interfaces/IUbiGamesOracle.sol";
 
 contract Ubiroll is IUbiGame, Ownable {
+    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     struct Bet {
@@ -63,7 +65,7 @@ contract Ubiroll is IUbiGame, Ownable {
     function createBet(uint256 _chance, uint256 _amount) public notPaused {
         require(_amount > 0, "bet amount must be greater than 0");
         require(_chance > 0, "winning chance must be greater than 0");
-        require((_chance + houseEdge) < 100, "winning chance must be lower");
+        require((_chance.add(houseEdge)) < 100, "winning chance must be lower");
 
         uint256 prize = calculatePrize(_chance, _amount);
         require(prize < maxPrize(), "prize must be lower than maxPrize");
@@ -119,7 +121,7 @@ contract Ubiroll is IUbiGame, Ownable {
 
     function maxPrize() public view returns (uint256) {
         uint256 balance = IERC20(ubi).balanceOf(address(this));
-        return balance / 100;
+        return balance.div(100);
     }
 
     function calculatePrize(uint256 _winningChance, uint256 _amount)
@@ -127,7 +129,7 @@ contract Ubiroll is IUbiGame, Ownable {
         view
         returns (uint256)
     {
-        return ((100 / _winningChance) * _amount * (100 - houseEdge)) / 100;
+        return _amount.mul(uint256(100).sub(houseEdge)).div(_winningChance);
     }
 
     function setUbi(address _ubi) public onlyOwner {

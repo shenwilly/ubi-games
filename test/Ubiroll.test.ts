@@ -29,6 +29,12 @@ describe("Ubiroll", () => {
   let link: LinkToken;
   let ubi: ERC20Mock;
 
+  const distributeUBIAndApprove = async () => {
+    await ubi.connect(owner).mint(ubiroll.address, parseUnits("10000", 18));
+    await ubi.connect(owner).mint(playerAddress, parseUnits("10", 18));
+    await ubi.connect(player).approve(ubiroll.address, parseUnits("10", 18));
+  };
+
   beforeEach(async () => {
     [owner, player] = await ethers.getSigners();
     ownerAddress = owner.address;
@@ -84,12 +90,6 @@ describe("Ubiroll", () => {
   });
 
   describe("createBet()", async () => {
-    const distributeUBIAndApprove = async () => {
-      await ubi.connect(owner).mint(ubiroll.address, parseUnits("10000", 18));
-      await ubi.connect(owner).mint(playerAddress, parseUnits("10", 18));
-      await ubi.connect(player).approve(ubiroll.address, parseUnits("10", 18));
-    };
-
     it("should revert if contract is paused", async () => {
       await ubiroll.connect(owner).setGamePause(true);
       await expectRevert(
@@ -176,11 +176,71 @@ describe("Ubiroll", () => {
   });
 
   describe("finalizeBet()", async () => {
-    it("should revert if not called by owner", async () => {
-      // await expectRevert(
-      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
-      //   "Ownable: caller is not the owner"
-      // );
+    it("should revert if not called by oracle", async () => {
+      await expectRevert(
+        ubiroll
+          .connect(player)
+          .finalizeBet(
+            "0x02a78c06fd8389fd861eb5aa94d9a9284e348c2a586b4a8b6735eee4bf19850e",
+            1
+          ),
+        "Sender must be oracle"
+      );
+    });
+    it("should revert if bet doesn't exist", async () => {
+      await ubiroll.setOracle(ownerAddress);
+      await expectRevert(
+        ubiroll
+          .connect(owner)
+          .finalizeBet(
+            "0x02a78c06fd8389fd861eb5aa94d9a9284e348c2a586b4a8b6735eee4bf19850e",
+            1
+          ),
+        "invalid opcode"
+      );
+    });
+    it("should succesfully finalise losing bet", async () => {
+      await distributeUBIAndApprove();
+      const tx = await ubiroll
+        .connect(player)
+        .createBet(1, parseUnits("1", 18));
+      const receipt = await tx.wait();
+      const betEvent = receipt.events!.filter(
+        (event) => event.event == "BetCreated"
+      )[0];
+      const betId = betEvent.args![0];
+      const requestId = betEvent.args![4];
+
+      await vrfCoordinator.callBackWithRandomness(requestId, 1, oracle.address);
+      const bet = await ubiroll.bets(betId);
+      expect(bet[3]).to.be.gt(bet[2]); // result > chance, player lose
+      expect(bet[6]).to.be.true; // finished
+      expect(bet[7]).to.be.eq(requestId);
+    });
+    it("should succesfully finalise winning bet and transfer prize", async () => {
+      await distributeUBIAndApprove();
+      const chance = 1;
+      const betAmount = parseUnits("1", 18);
+      const tx = await ubiroll.connect(player).createBet(chance, betAmount);
+      const receipt = await tx.wait();
+      const betEvent = receipt.events!.filter(
+        (event) => event.event == "BetCreated"
+      )[0];
+      const betId = betEvent.args![0];
+      const requestId = betEvent.args![4];
+
+      const playerUbiBalance = await ubi.balanceOf(playerAddress);
+
+      await vrfCoordinator.callBackWithRandomness(requestId, 0, oracle.address);
+      const bet = await ubiroll.bets(betId);
+      expect(bet[3]).to.be.lte(bet[2]); // result <= chance, player win
+      expect(bet[6]).to.be.true; // finished
+      expect(bet[7]).to.be.eq(requestId);
+
+      const expectedPrize = await ubiroll.calculatePrize(chance, betAmount);
+      expect(await ubi.balanceOf(playerAddress)).to.be.eq(
+        playerUbiBalance.add(expectedPrize)
+      );
     });
   });
 
@@ -236,6 +296,14 @@ describe("Ubiroll", () => {
     });
   });
   describe("setHouseEdge()", async () => {
+    it("should revert if not called by owner", async () => {
+      // await expectRevert(
+      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
+      //   "Ownable: caller is not the owner"
+      // );
+    });
+  });
+  describe("Prize calculation", async () => {
     it("should revert if not called by owner", async () => {
       // await expectRevert(
       //   oracle.connect(stranger).setRegistered(strangerAddress, true),

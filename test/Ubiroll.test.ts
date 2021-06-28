@@ -14,6 +14,7 @@ import {
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Logger, parseUnits } from "ethers/lib/utils";
+import { BigNumber } from "ethers";
 
 const { expect } = chai;
 const { expectRevert } = require("@openzeppelin/test-helpers");
@@ -90,7 +91,7 @@ describe("Ubiroll", () => {
   });
 
   describe("createBet()", async () => {
-    it("should revert if contract is paused", async () => {
+    it("should revert if game is paused", async () => {
       await ubiroll.connect(owner).setGamePause(true);
       await expectRevert(
         ubiroll.connect(player).createBet(50, 1),
@@ -246,69 +247,140 @@ describe("Ubiroll", () => {
 
   describe("withdrawToken()", async () => {
     it("should revert if not called by owner", async () => {
-      // await expectRevert(
-      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
-      //   "Ownable: caller is not the owner"
-      // );
+      await expectRevert(
+        ubiroll.connect(player).withdrawToken(ubi.address, 1),
+        "Ownable: caller is not the owner"
+      );
+    });
+    it("should withdraw token if called by owner", async () => {
+      const ownerUbiBalance = await ubi.balanceOf(ownerAddress);
+      await ubi.connect(owner).mint(ubiroll.address, parseUnits("1", 18));
+      const contractUbiBalance = await ubi.balanceOf(ubiroll.address);
+      expect(contractUbiBalance).to.be.gt(0);
+      await ubiroll
+        .connect(owner)
+        .withdrawToken(ubi.address, contractUbiBalance),
+        expect(await ubi.balanceOf(ubiroll.address)).to.be.eq(0);
+      expect(await ubi.balanceOf(ownerAddress)).to.be.eq(
+        ownerUbiBalance.add(contractUbiBalance)
+      );
     });
   });
 
   describe("maxPrize()", async () => {
-    it("should revert if not called by owner", async () => {
-      // await expectRevert(
-      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
-      //   "Ownable: caller is not the owner"
-      // );
+    it("should return maxPrize", async () => {
+      await ubi.mint(ubiroll.address, parseUnits("100", 18));
+      const ubiBalance = await ubi.balanceOf(ubiroll.address);
+      const maxPrize = ubiBalance.div(100); // 1% of balance
+      expect(await ubiroll.maxPrize()).to.be.eq(maxPrize);
     });
   });
 
   describe("calculatePrize()", async () => {
-    it("should revert if not called by owner", async () => {
-      // await expectRevert(
-      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
-      //   "Ownable: caller is not the owner"
-      // );
+    const calculatePrize = (
+      chance: number,
+      amount: BigNumber,
+      houseEdge: number
+    ) => {
+      return amount.mul(BigNumber.from(100).sub(houseEdge)).div(chance);
+    };
+
+    it("should return correct prize", async () => {
+      expect(calculatePrize(50, BigNumber.from(1), 0)).to.be.eq(2);
+      expect(calculatePrize(50, BigNumber.from(100), 1)).to.be.eq(198);
+
+      const amount = BigNumber.from(100);
+      await ubiroll.connect(owner).setHouseEdge(0);
+      expect(await ubiroll.calculatePrize(50, amount)).to.be.eq(
+        calculatePrize(50, amount, 0)
+      );
+      expect(await ubiroll.calculatePrize(98, amount)).to.be.eq(
+        calculatePrize(98, amount, 0)
+      );
+      expect(await ubiroll.calculatePrize(1, amount)).to.be.eq(
+        calculatePrize(1, amount, 0)
+      );
+
+      await ubiroll.connect(owner).setHouseEdge(1);
+      expect(await ubiroll.calculatePrize(50, amount)).to.be.eq(
+        calculatePrize(50, amount, 1)
+      );
+      expect(await ubiroll.calculatePrize(98, amount)).to.be.eq(
+        calculatePrize(98, amount, 1)
+      );
+      expect(await ubiroll.calculatePrize(1, amount)).to.be.eq(
+        calculatePrize(1, amount, 1)
+      );
+
+      await ubiroll.connect(owner).setHouseEdge(5);
+      expect(await ubiroll.calculatePrize(50, amount)).to.be.eq(
+        calculatePrize(50, amount, 5)
+      );
+      expect(await ubiroll.calculatePrize(98, amount)).to.be.eq(
+        calculatePrize(98, amount, 5)
+      );
+      expect(await ubiroll.calculatePrize(1, amount)).to.be.eq(
+        calculatePrize(1, amount, 5)
+      );
     });
   });
 
   describe("setUbi()", async () => {
     it("should revert if not called by owner", async () => {
-      // await expectRevert(
-      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
-      //   "Ownable: caller is not the owner"
-      // );
+      await expectRevert(
+        ubiroll.connect(player).setUbi(playerAddress),
+        "Ownable: caller is not the owner"
+      );
+    });
+    it("should set new Ubi address if called by owner", async () => {
+      const oldUbi = await ubiroll.ubi();
+      const newUbi = playerAddress;
+      expect(oldUbi).to.be.not.eq(newUbi);
+      await ubiroll.connect(owner).setUbi(newUbi);
+      expect(await ubiroll.ubi()).to.be.eq(newUbi);
     });
   });
   describe("setOracle()", async () => {
     it("should revert if not called by owner", async () => {
-      // await expectRevert(
-      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
-      //   "Ownable: caller is not the owner"
-      // );
+      await expectRevert(
+        ubiroll.connect(player).setOracle(playerAddress),
+        "Ownable: caller is not the owner"
+      );
+    });
+    it("should set new oracle address if called by owner", async () => {
+      const oldUbi = await ubiroll.oracle();
+      const newOracle = playerAddress;
+      expect(oldUbi).to.be.not.eq(newOracle);
+      await ubiroll.connect(owner).setOracle(newOracle);
+      expect(await ubiroll.oracle()).to.be.eq(newOracle);
     });
   });
   describe("setGamePause()", async () => {
     it("should revert if not called by owner", async () => {
-      // await expectRevert(
-      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
-      //   "Ownable: caller is not the owner"
-      // );
+      await expectRevert(
+        ubiroll.connect(player).setGamePause(true),
+        "Ownable: caller is not the owner"
+      );
+    });
+    it("should set new oracle address if called by owner", async () => {
+      const gamePaused = await ubiroll.gamePaused();
+      await ubiroll.connect(owner).setGamePause(!gamePaused);
+      expect(await ubiroll.gamePaused()).to.be.eq(!gamePaused);
     });
   });
   describe("setHouseEdge()", async () => {
     it("should revert if not called by owner", async () => {
-      // await expectRevert(
-      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
-      //   "Ownable: caller is not the owner"
-      // );
+      await expectRevert(
+        ubiroll.connect(player).setHouseEdge(1),
+        "Ownable: caller is not the owner"
+      );
     });
-  });
-  describe("Prize calculation", async () => {
-    it("should revert if not called by owner", async () => {
-      // await expectRevert(
-      //   oracle.connect(stranger).setRegistered(strangerAddress, true),
-      //   "Ownable: caller is not the owner"
-      // );
+    it("should set houseEdge if called by owner", async () => {
+      const oldHouseEdge = await ubiroll.houseEdge();
+      const newHouseEdge = 2;
+      expect(oldHouseEdge).to.be.not.eq(newHouseEdge);
+      await ubiroll.connect(owner).setHouseEdge(newHouseEdge);
+      expect(await ubiroll.houseEdge()).to.be.eq(newHouseEdge);
     });
   });
 });

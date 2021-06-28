@@ -17,11 +17,17 @@ contract UbiGamesVault is Ownable {
     }
 
     address public ubi;
+    address public burner;
     mapping(address => bool) public registeredGames;
     uint256 public burnPercentage;
 
-    constructor(address _ubi, uint256 _burnPercentage) {
+    constructor(
+        address _ubi,
+        address _burner,
+        uint256 _burnPercentage
+    ) {
         ubi = _ubi;
+        burner = _burner;
         burnPercentage = _burnPercentage;
     }
 
@@ -29,9 +35,9 @@ contract UbiGamesVault is Ownable {
         public
         onlyRegisteredGame
     {
-        IERC20(ubi).transferFrom(_from, address(0), _amount);
+        IERC20(ubi).transferFrom(_from, address(this), _amount);
         uint256 burnAmount = _amount.mul(burnPercentage).div(100);
-        IERC20(ubi).transfer(address(0), burnAmount);
+        IERC20(ubi).transfer(burner, burnAmount);
     }
 
     function gameWithdraw(address _to, uint256 _amount)

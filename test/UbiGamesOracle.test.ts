@@ -1,10 +1,15 @@
 import { ethers } from "hardhat";
 import chai from "chai";
 import {
+  ERC20Mock,
+  ERC20Mock__factory,
   LinkToken,
   LinkToken__factory,
   UbiGamesOracle,
   UbiGamesOracle__factory,
+  Ubiroll,
+  Ubiroll__factory,
+  VRFCoordinatorMock,
   VRFCoordinatorMock__factory,
 } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -18,13 +23,18 @@ describe("UbiGamesOracle", () => {
   let owner: SignerWithAddress, stranger: SignerWithAddress;
   let ownerAddress: string, strangerAddress: string;
 
+  let ubiroll: Ubiroll;
   let oracle: UbiGamesOracle;
+  let vrfCoordinator: VRFCoordinatorMock;
   let link: LinkToken;
+  let ubi: ERC20Mock;
 
   beforeEach(async () => {
     [owner, stranger] = await ethers.getSigners();
     ownerAddress = owner.address;
     strangerAddress = stranger.address;
+
+    console.log(parseUnits("0.1", 18).toString());
 
     const LinkTokenFactory = (await ethers.getContractFactory(
       "LinkToken",
@@ -32,11 +42,22 @@ describe("UbiGamesOracle", () => {
     )) as LinkToken__factory;
     link = await LinkTokenFactory.connect(owner).deploy();
 
+    const ERC20MockFactory = (await ethers.getContractFactory(
+      "ERC20Mock",
+      owner
+    )) as ERC20Mock__factory;
+    ubi = await ERC20MockFactory.connect(owner).deploy(
+      "UBI",
+      "UBI",
+      ownerAddress,
+      parseUnits("1", 18)
+    );
+
     const VRFCoordinatorFactory = (await ethers.getContractFactory(
       "VRFCoordinatorMock",
       owner
     )) as VRFCoordinatorMock__factory;
-    const vrfCoordinator = await VRFCoordinatorFactory.connect(owner).deploy(
+    vrfCoordinator = await VRFCoordinatorFactory.connect(owner).deploy(
       link.address
     );
 
@@ -49,6 +70,15 @@ describe("UbiGamesOracle", () => {
       link.address,
       "0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f3",
       parseUnits("0.1", 18)
+    );
+
+    const UbirollFactory = (await ethers.getContractFactory(
+      "Ubiroll",
+      owner
+    )) as Ubiroll__factory;
+    ubiroll = await UbirollFactory.connect(owner).deploy(
+      ubi.address,
+      oracle.address
     );
   });
 
@@ -99,9 +129,38 @@ describe("UbiGamesOracle", () => {
   });
 
   describe("fulfillRandomness()", async () => {
-    it("should count up", async () => {
-      // await counter.countUp();
-      // let count = await counter.getCount();expect(count).to.eq(1);
+    it("should revert if not called by VRFCoordinator", async () => {
+      await expectRevert(
+        oracle
+          .connect(stranger)
+          .rawFulfillRandomness(
+            "0x02a78c06fd8389fd861eb5aa94d9a9284e348c2a586b4a8b6735eee4bf19850e",
+            0
+          ),
+        "Only VRFCoordinator can fulfill"
+      );
+    });
+    it("should revert if request does not exist", async () => {
+      // await oracle.connect(owner).setRegistered(ubiroll.address, true);
+      // await expectRevert(
+      //   vrfCoordinator.connect(owner).callBackWithRandomness(
+      //     "0x02a78c06fd8389fd861eb5aa94d9a9284e348c2a586b4a8b6735eee4bf19850e", 0, oracle.address
+      //   ),
+      //   "Only VRFCoordinator can fulfill"
+      // );
+      // const tx = await vrfCoordinator
+      //   .connect(owner)
+      //   .callBackWithRandomness(
+      //     "0x02a78c06fd8389fd861eb5aa94d9a9284e348c2a586b4a8b6735eee4bf19850e",
+      //     0,
+      //     oracle.address,
+      //   );
+      // const receipt = await tx.wait();
+      // if (receipt?.events) {
+      //   receipt.events.forEach((event) => {
+      //     console.log(event.args);
+      //   });
+      // }
     });
   });
 

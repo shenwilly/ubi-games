@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IUBI} from "./interfaces/IUBI.sol";
 
 contract UbiGamesVault is Ownable {
     using SafeMath for uint256;
@@ -17,17 +18,12 @@ contract UbiGamesVault is Ownable {
     }
 
     address public ubi;
-    address public burner;
     mapping(address => bool) public registeredGames;
     uint256 public burnPercentage;
+    uint256 public pendingBurn;
 
-    constructor(
-        address _ubi,
-        address _burner,
-        uint256 _burnPercentage
-    ) {
+    constructor(address _ubi, uint256 _burnPercentage) {
         ubi = _ubi;
-        burner = _burner;
         burnPercentage = _burnPercentage;
     }
 
@@ -37,7 +33,7 @@ contract UbiGamesVault is Ownable {
     {
         IERC20(ubi).transferFrom(_from, address(this), _amount);
         uint256 burnAmount = _amount.mul(burnPercentage).div(100);
-        IERC20(ubi).transfer(burner, burnAmount);
+        pendingBurn += burnAmount;
     }
 
     function gameWithdraw(address _to, uint256 _amount)
@@ -47,9 +43,19 @@ contract UbiGamesVault is Ownable {
         IERC20(ubi).transfer(_to, _amount);
     }
 
-    // WARNING: can empty vault when bet has not resolved yet
-    function withdrawToken(address _token, uint256 _amount) public onlyOwner {
-        IERC20(_token).transfer(msg.sender, _amount);
+    function burnUbi() public {
+        IUBI(ubi).burn(pendingBurn);
+        pendingBurn = 0;
+    }
+
+    // WARNING: can empty vault when games have not not resolved
+    function withdrawUbi(uint256 _amount) public onlyOwner {
+        uint256 withdrawable = IERC20(ubi).balanceOf(address(this)).sub(
+            pendingBurn
+        );
+        require(_amount <= withdrawable, "amount too large");
+
+        IERC20(ubi).transfer(msg.sender, _amount);
     }
 
     function setRegisteredGame(address _address, bool _value) public onlyOwner {

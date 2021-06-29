@@ -1,3 +1,4 @@
+import { parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { UbiGamesOracle__factory, UbiGamesVault__factory, Ubiroll__factory } from "../typechain";
 import { DEPLOY_CONFIGS, NETWORKS } from "./constants";
@@ -13,6 +14,9 @@ async function main() {
   const vrfCoordinator = config.VRFCoordinator;
   const vrfKeyHash = config.KEY_HASH;
   const vrfFee = config.VRF_FEE;
+
+  const burnPercentage = 50;
+  const minBet = parseUnits("1", 18)
 
   // const ERC20MockFactory = (await ethers.getContractFactory(
   //   "ERC20Mock",
@@ -47,7 +51,7 @@ async function main() {
     .connect(deployer)
     .deploy(
       ubiTokenAddress,
-      25
+      burnPercentage
     );
   console.log("Vault:", vault.address);
   await vault.deployed();
@@ -60,7 +64,8 @@ async function main() {
     .connect(deployer)
     .deploy(
       oracle.address,
-      vault.address
+      vault.address,
+      minBet
     );
   console.log("Ubiroll:", ubiroll.address);
   await ubiroll.deployed();

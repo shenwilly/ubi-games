@@ -10,6 +10,7 @@
     "test": "npx hardhat test",
     "deploy:localhost": "npx hardhat run scripts/deploy.ts --network localhost",
     "deploy:kovan": "npx hardhat run scripts/deploy.ts --network kovan",
+    "deploy:matic": "npx hardhat run scripts/deploy.ts --network matic",
     "coverage": "npm run build && npx hardhat coverage --temp artifacts --network coverage",
     "lint:sol": "solhint -f table contracts/**/*.sol",
     "lint:tests": "eslint 'test/**/*.ts'",

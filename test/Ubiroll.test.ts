@@ -258,28 +258,6 @@ describe("Ubiroll", () => {
     });
   });
 
-  // describe("withdrawToken()", async () => {
-  //   it("should revert if not called by owner", async () => {
-  //     await expectRevert(
-  //       ubiroll.connect(player).withdrawToken(ubi.address, 1),
-  //       "Ownable: caller is not the owner"
-  //     );
-  //   });
-  //   it("should withdraw token if called by owner", async () => {
-  //     const ownerUbiBalance = await ubi.balanceOf(ownerAddress);
-  //     await ubi.connect(owner).mint(ubiroll.address, parseUnits("1", 18));
-  //     const contractUbiBalance = await ubi.balanceOf(ubiroll.address);
-  //     expect(contractUbiBalance).to.be.gt(0);
-  //     await ubiroll
-  //       .connect(owner)
-  //       .withdrawToken(ubi.address, contractUbiBalance),
-  //       expect(await ubi.balanceOf(ubiroll.address)).to.be.eq(0);
-  //     expect(await ubi.balanceOf(ownerAddress)).to.be.eq(
-  //       ownerUbiBalance.add(contractUbiBalance)
-  //     );
-  //   });
-  // });
-
   describe("maxPrize()", async () => {
     it("should return maxPrize", async () => {
       await ubi.mint(vault.address, parseUnits("100", 18));
@@ -338,21 +316,6 @@ describe("Ubiroll", () => {
     });
   });
 
-  // describe("setUbi()", async () => {
-  //   it("should revert if not called by owner", async () => {
-  //     await expectRevert(
-  //       ubiroll.connect(player).setUbi(playerAddress),
-  //       "Ownable: caller is not the owner"
-  //     );
-  //   });
-  //   it("should set new Ubi address if called by owner", async () => {
-  //     const oldUbi = await ubiroll.ubi();
-  //     const newUbi = playerAddress;
-  //     expect(oldUbi).to.be.not.eq(newUbi);
-  //     await ubiroll.connect(owner).setUbi(newUbi);
-  //     expect(await ubiroll.ubi()).to.be.eq(newUbi);
-  //   });
-  // });
   describe("setOracle()", async () => {
     it("should revert if not called by owner", async () => {
       await expectRevert(

@@ -1,14 +1,11 @@
 import { ethers } from "hardhat";
 import chai from "chai";
 import {
-  ERC20Mock,
   ERC20Mock__factory,
   LinkToken,
   LinkToken__factory,
   UbiGamesOracle,
   UbiGamesOracle__factory,
-  Ubiroll,
-  Ubiroll__factory,
   VRFCoordinatorMock,
   VRFCoordinatorMock__factory,
 } from "../typechain";
@@ -23,11 +20,9 @@ describe("UbiGamesOracle", () => {
   let owner: SignerWithAddress, stranger: SignerWithAddress;
   let ownerAddress: string, strangerAddress: string;
 
-  let ubiroll: Ubiroll;
   let oracle: UbiGamesOracle;
   let vrfCoordinator: VRFCoordinatorMock;
   let link: LinkToken;
-  let ubi: ERC20Mock;
 
   beforeEach(async () => {
     [owner, stranger] = await ethers.getSigners();
@@ -44,7 +39,7 @@ describe("UbiGamesOracle", () => {
       "ERC20Mock",
       owner
     )) as ERC20Mock__factory;
-    ubi = await ERC20MockFactory.connect(owner).deploy(
+    const ubi = await ERC20MockFactory.connect(owner).deploy(
       "UBI",
       "UBI",
       ownerAddress,
@@ -69,15 +64,6 @@ describe("UbiGamesOracle", () => {
       "0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f3",
       parseUnits("0.1", 18)
     );
-
-    // const UbirollFactory = (await ethers.getContractFactory(
-    //   "Ubiroll",
-    //   owner
-    // )) as Ubiroll__factory;
-    // ubiroll = await UbirollFactory.connect(owner).deploy(
-    //   oracle.address,
-    //   vault.address
-    // );
   });
 
   describe("setRegisteredContract()", async () => {

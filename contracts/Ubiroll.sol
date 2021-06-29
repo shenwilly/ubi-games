@@ -31,6 +31,7 @@ contract Ubiroll is IUbiGame, Ownable {
     mapping(bytes32 => uint256) public oracleRequestToBet;
     bool public gamePaused = false;
     uint16 public houseEdge = 1; // 1/100
+    uint256 public minBet; // 1/100
 
     modifier notPaused() {
         require(!gamePaused, "Game is paused");
@@ -57,13 +58,18 @@ contract Ubiroll is IUbiGame, Ownable {
         bool win
     );
 
-    constructor(address _oracle, address _vault) {
+    constructor(
+        address _oracle,
+        address _vault,
+        uint256 _minBet
+    ) {
         oracle = _oracle;
         vault = _vault;
+        minBet = _minBet;
     }
 
     function createBet(uint256 _chance, uint256 _amount) public notPaused {
-        require(_amount > 0, "Bet amount must be greater than 0");
+        require(_amount >= minBet, "Bet amount must be greater than minBet");
         require(_chance > 0, "Winning chance must be greater than 0");
         require((_chance.add(houseEdge)) < 100, "Winning chance must be lower");
 
@@ -146,5 +152,9 @@ contract Ubiroll is IUbiGame, Ownable {
 
     function setHouseEdge(uint16 _houseEdge) public onlyOwner {
         houseEdge = _houseEdge;
+    }
+
+    function setMinBet(uint256 _minBet) public onlyOwner {
+        minBet = _minBet;
     }
 }

@@ -46,6 +46,7 @@ contract UbiGamesVault is Ownable {
     }
 
     function burnUbi() public {
+        require(pendingBurn > 0, "Nothing to burn");
         IUBI(ubi).burn(pendingBurn);
 
         emit Burn(pendingBurn);
@@ -58,7 +59,7 @@ contract UbiGamesVault is Ownable {
         uint256 withdrawable = IERC20(ubi).balanceOf(address(this)).sub(
             pendingBurn
         );
-        require(_amount <= withdrawable, "amount too large");
+        require(_amount <= withdrawable, "Amount too large");
 
         IERC20(ubi).transfer(msg.sender, _amount);
     }

@@ -64,12 +64,12 @@ contract Ubiroll is IUbiGame, Ownable {
     }
 
     function createBet(uint256 _chance, uint256 _amount) public notPaused {
-        require(_amount > 0, "bet amount must be greater than 0");
-        require(_chance > 0, "winning chance must be greater than 0");
-        require((_chance.add(houseEdge)) < 100, "winning chance must be lower");
+        require(_amount > 0, "Bet amount must be greater than 0");
+        require(_chance > 0, "Winning chance must be greater than 0");
+        require((_chance.add(houseEdge)) < 100, "Winning chance must be lower");
 
         uint256 prize = calculatePrize(_chance, _amount);
-        require(prize < maxPrize(), "prize must be lower than maxPrize");
+        require(prize < maxPrize(), "Prize must be lower than maxPrize");
 
         IUbiGamesVault(vault).gameDeposit(msg.sender, _amount);
 

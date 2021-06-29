@@ -87,11 +87,7 @@ describe("Ubiroll", () => {
       "UbiGamesVault",
       owner
     )) as UbiGamesVault__factory;
-    vault = await VaultFactory.connect(owner).deploy(
-      ubi.address,
-      burnerAddress,
-      25
-    );
+    vault = await VaultFactory.connect(owner).deploy(ubi.address, 25);
 
     const UbirollFactory = (await ethers.getContractFactory(
       "Ubiroll",

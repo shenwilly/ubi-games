@@ -70,14 +70,14 @@ describe("UbiGamesOracle", () => {
       parseUnits("0.1", 18)
     );
 
-    const UbirollFactory = (await ethers.getContractFactory(
-      "Ubiroll",
-      owner
-    )) as Ubiroll__factory;
-    ubiroll = await UbirollFactory.connect(owner).deploy(
-      ubi.address,
-      oracle.address
-    );
+    // const UbirollFactory = (await ethers.getContractFactory(
+    //   "Ubiroll",
+    //   owner
+    // )) as Ubiroll__factory;
+    // ubiroll = await UbirollFactory.connect(owner).deploy(
+    //   oracle.address,
+    //   vault.address
+    // );
   });
 
   describe("setRegisteredContract()", async () => {

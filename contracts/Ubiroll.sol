@@ -31,7 +31,7 @@ contract Ubiroll is IUbiGame, Ownable {
     mapping(bytes32 => uint256) public oracleRequestToBet;
     bool public gamePaused = false;
     uint16 public houseEdge = 1; // 1/100
-    uint256 public minBet; // 1/100
+    uint256 public minBet;
 
     modifier notPaused() {
         require(!gamePaused, "Game is paused");

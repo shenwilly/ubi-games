@@ -17,6 +17,7 @@ import {
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Logger, parseUnits } from "ethers/lib/utils";
 import { BigNumber } from "ethers";
+import { parse } from "url";
 
 const { expect } = chai;
 const { expectRevert } = require("@openzeppelin/test-helpers");
@@ -34,6 +35,7 @@ describe("Ubiroll", () => {
   let vrfCoordinator: VRFCoordinatorMock;
   let link: LinkToken;
   let ubi: ERC20Mock;
+  const minBet = parseUnits("0.1", 18);
 
   const distributeUBIAndApprove = async () => {
     await ubi.connect(owner).mint(vault.address, parseUnits("10000", 18));
@@ -95,7 +97,8 @@ describe("Ubiroll", () => {
     )) as Ubiroll__factory;
     ubiroll = await UbirollFactory.connect(owner).deploy(
       oracle.address,
-      vault.address
+      vault.address,
+      minBet
     );
 
     await oracle.connect(owner).setRegistered(ubiroll.address, true);
@@ -111,34 +114,38 @@ describe("Ubiroll", () => {
         "Game is paused"
       );
     });
-    it("should revert if amount is 0", async () => {
+    it("should revert if amount is lower than minBet", async () => {
       await expectRevert(
         ubiroll.connect(player).createBet(50, 0),
-        "Bet amount must be greater than 0"
+        "Bet amount must be greater than minBet"
+      );
+      await expectRevert(
+        ubiroll.connect(player).createBet(50, minBet.sub(1)),
+        "Bet amount must be greater than minBet"
       );
     });
     it("should revert if chance is 0", async () => {
       await expectRevert(
-        ubiroll.connect(player).createBet(0, 1),
+        ubiroll.connect(player).createBet(0, minBet),
         "Winning chance must be greater than 0"
       );
     });
     it("should revert if chance + houseEdge are greater than 99", async () => {
       await expectRevert(
-        ubiroll.connect(player).createBet(101, 1),
+        ubiroll.connect(player).createBet(101, minBet),
         "Winning chance must be lower"
       );
 
       const houseEdge = await ubiroll.houseEdge();
       const chance = 100 - houseEdge;
       await expectRevert(
-        ubiroll.connect(player).createBet(chance, 1),
+        ubiroll.connect(player).createBet(chance, minBet),
         "Winning chance must be lower"
       );
     });
     it("should revert if bet prize is higher than maxPrize", async () => {
       await expectRevert(
-        ubiroll.connect(player).createBet(1, 1),
+        ubiroll.connect(player).createBet(1, minBet),
         "Prize must be lower than maxPrize"
       );
 
@@ -357,6 +364,21 @@ describe("Ubiroll", () => {
       expect(oldHouseEdge).to.be.not.eq(newHouseEdge);
       await ubiroll.connect(owner).setHouseEdge(newHouseEdge);
       expect(await ubiroll.houseEdge()).to.be.eq(newHouseEdge);
+    });
+  });
+  describe("setMinBet()", async () => {
+    it("should revert if not called by owner", async () => {
+      await expectRevert(
+        ubiroll.connect(player).setMinBet(1),
+        "Ownable: caller is not the owner"
+      );
+    });
+    it("should set minBet if called by owner", async () => {
+      const oldMinBet = await ubiroll.minBet();
+      const newMinBet = parseUnits("10", 18);
+      expect(oldMinBet).to.be.not.eq(newMinBet);
+      await ubiroll.connect(owner).setMinBet(newMinBet);
+      expect(await ubiroll.minBet()).to.be.eq(newMinBet);
     });
   });
 });

@@ -85,7 +85,8 @@ describe("UbiGamesVault", () => {
     )) as Ubiroll__factory;
     ubiroll = await UbirollFactory.connect(owner).deploy(
       oracle.address,
-      vault.address
+      vault.address,
+      parseUnits("0.1", 18)
     );
 
     await oracle.connect(owner).setRegistered(ubiroll.address, true);

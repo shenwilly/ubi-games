@@ -22,6 +22,8 @@ contract UbiGamesVault is Ownable {
     uint256 public burnPercentage;
     uint256 public pendingBurn;
 
+    event Burn(uint256 amount);
+
     constructor(address _ubi, uint256 _burnPercentage) {
         ubi = _ubi;
         burnPercentage = _burnPercentage;
@@ -33,7 +35,7 @@ contract UbiGamesVault is Ownable {
     {
         IERC20(ubi).transferFrom(_from, address(this), _amount);
         uint256 burnAmount = _amount.mul(burnPercentage).div(100);
-        pendingBurn += burnAmount;
+        pendingBurn = pendingBurn.add(burnAmount);
     }
 
     function gameWithdraw(address _to, uint256 _amount)
@@ -45,6 +47,9 @@ contract UbiGamesVault is Ownable {
 
     function burnUbi() public {
         IUBI(ubi).burn(pendingBurn);
+
+        emit Burn(pendingBurn);
+
         pendingBurn = 0;
     }
 

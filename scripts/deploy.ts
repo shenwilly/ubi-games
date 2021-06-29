@@ -1,14 +1,18 @@
-import { parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { UbiGamesOracle__factory, UbiGamesVault__factory, Ubiroll__factory } from "../typechain";
+import { DEPLOY_CONFIGS, NETWORKS } from "./constants";
 
 async function main() {
+  const chainId = NETWORKS.MATIC_MAINNET;
+
   const [deployer] = await ethers.getSigners();
-  const ubiTokenAddress = "0xa36085F69e2889c224210F603D836748e7dC0088";
-  const linkTokenAddress = "0xa36085F69e2889c224210F603D836748e7dC0088";
-  const vrfCoordinator = "0xdD3782915140c8f3b190B5D67eAc6dc5760C46E9";
-  const vrfKeyHash = "0x6c3699283bda56ad74f6b855546325b68d482e983852a7a82979cc4807b641f4";
-  const vrfFee = parseUnits("0.1", 18);
+
+  const config = DEPLOY_CONFIGS[chainId];
+  const ubiTokenAddress = config.UBI;
+  const linkTokenAddress = config.LINK;
+  const vrfCoordinator = config.VRFCoordinator;
+  const vrfKeyHash = config.KEY_HASH;
+  const vrfFee = config.VRF_FEE;
 
   // const ERC20MockFactory = (await ethers.getContractFactory(
   //   "ERC20Mock",

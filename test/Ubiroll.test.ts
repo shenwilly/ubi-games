@@ -114,32 +114,32 @@ describe("Ubiroll", () => {
     it("should revert if amount is 0", async () => {
       await expectRevert(
         ubiroll.connect(player).createBet(50, 0),
-        "bet amount must be greater than 0"
+        "Bet amount must be greater than 0"
       );
     });
     it("should revert if chance is 0", async () => {
       await expectRevert(
         ubiroll.connect(player).createBet(0, 1),
-        "winning chance must be greater than 0"
+        "Winning chance must be greater than 0"
       );
     });
     it("should revert if chance + houseEdge are greater than 99", async () => {
       await expectRevert(
         ubiroll.connect(player).createBet(101, 1),
-        "winning chance must be lower"
+        "Winning chance must be lower"
       );
 
       const houseEdge = await ubiroll.houseEdge();
       const chance = 100 - houseEdge;
       await expectRevert(
         ubiroll.connect(player).createBet(chance, 1),
-        "winning chance must be lower"
+        "Winning chance must be lower"
       );
     });
     it("should revert if bet prize is higher than maxPrize", async () => {
       await expectRevert(
         ubiroll.connect(player).createBet(1, 1),
-        "prize must be lower than maxPrize"
+        "Prize must be lower than maxPrize"
       );
 
       await distributeUBIAndApprove();
@@ -161,7 +161,7 @@ describe("Ubiroll", () => {
       expect(prizeNotAllowed).gt(maxPrize);
       await expectRevert(
         ubiroll.connect(player).createBet(chance, amountNotAllowed),
-        "prize must be lower than maxPrize"
+        "Prize must be lower than maxPrize"
       );
     });
     it("should revert if oracle can't request randomness", async () => {

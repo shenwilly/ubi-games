@@ -22,8 +22,8 @@ const { expectRevert } = require("@openzeppelin/test-helpers");
 Logger.setLogLevel(Logger.levels.ERROR); // LINK double Transfer event log
 
 describe("UbiGamesVault", () => {
-  let owner: SignerWithAddress, game: SignerWithAddress;
-  let ownerAddress: string, gameAddress: string;
+  let owner: SignerWithAddress, game: SignerWithAddress, burner: SignerWithAddress;
+  let ownerAddress: string, gameAddress: string, burnerAddress: string;
 
   let ubiroll: Ubiroll;
   let oracle: UbiGamesOracle;
@@ -33,9 +33,10 @@ describe("UbiGamesVault", () => {
   let ubi: ERC20Mock;
 
   beforeEach(async () => {
-    [owner, game] = await ethers.getSigners();
+    [owner, game, burner] = await ethers.getSigners();
     ownerAddress = owner.address;
     gameAddress = game.address;
+    burnerAddress = burner.address;
 
     const LinkTokenFactory = (await ethers.getContractFactory(
       "LinkToken",
@@ -77,7 +78,7 @@ describe("UbiGamesVault", () => {
       "UbiGamesVault",
       owner
     )) as UbiGamesVault__factory;
-    vault = await VaultFactory.connect(owner).deploy(ubi.address, 25);
+    vault = await VaultFactory.connect(owner).deploy(ubi.address, burnerAddress, 25);
 
     const UbirollFactory = (await ethers.getContractFactory(
       "Ubiroll",
@@ -160,10 +161,10 @@ describe("UbiGamesVault", () => {
     });
   });
 
-  describe("burnUbi()", async () => {
+  describe("withdrawUbiToBurn()", async () => {
     it("should revert if pending burn is 0", async () => {
       expect(await vault.pendingBurn()).to.be.eq(0);
-      await expectRevert(vault.burnUbi(), "Nothing to burn");
+      await expectRevert(vault.withdrawUbiToBurn(), "Nothing to burn");
     });
     it("should burn ubi", async () => {
       const amount = parseUnits("1", 18);
@@ -172,11 +173,13 @@ describe("UbiGamesVault", () => {
       await ubi.connect(game).approve(vault.address, amount);
       await vault.connect(game).gameDeposit(gameAddress, amount);
       const pendingBurn = await vault.pendingBurn();
+      const burnerBalance = await ubi.balanceOf(burnerAddress);
       expect(await ubi.balanceOf(vault.address)).to.be.gt(0);
-      await vault.burnUbi();
+      await vault.withdrawUbiToBurn();
       expect(await ubi.balanceOf(vault.address)).to.be.eq(
-        amount.sub(pendingBurn)
-      );
+        amount.sub(pendingBurn));
+      expect(await ubi.balanceOf(burnerAddress)).to.be.eq(
+        burnerBalance.add(pendingBurn));
     });
   });
 
@@ -229,6 +232,22 @@ describe("UbiGamesVault", () => {
       expect(oldUbi).to.be.not.eq(newUbi);
       await vault.connect(owner).setUbi(newUbi);
       expect(await vault.ubi()).to.be.eq(newUbi);
+    });
+  });
+
+  describe("setBurner()", async () => {
+    it("should revert if not called by owner", async () => {
+      await expectRevert(
+        vault.connect(game).setBurner(ownerAddress),
+        "Ownable: caller is not the owner"
+      );
+    });
+    it("should set new burner address if called by owner", async () => {
+      const oldBurner = await vault.burner();
+      const newBurner = gameAddress;
+      expect(oldBurner).to.be.not.eq(newBurner);
+      await vault.connect(owner).setBurner(newBurner);
+      expect(await vault.burner()).to.be.eq(newBurner);
     });
   });
 

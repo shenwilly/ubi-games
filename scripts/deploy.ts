@@ -15,6 +15,7 @@ async function main() {
   const vrfKeyHash = config.KEY_HASH;
   const vrfFee = config.VRF_FEE;
 
+  const burnerAddress = "";
   const burnPercentage = 50;
   const minBet = parseUnits("1", 18)
 
@@ -51,6 +52,7 @@ async function main() {
     .connect(deployer)
     .deploy(
       ubiTokenAddress,
+      burnerAddress,
       burnPercentage
     );
   console.log("Vault:", vault.address);

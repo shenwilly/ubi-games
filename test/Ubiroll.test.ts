@@ -17,7 +17,6 @@ import {
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Logger, parseUnits } from "ethers/lib/utils";
 import { BigNumber } from "ethers";
-import { parse } from "url";
 
 const { expect } = chai;
 const { expectRevert } = require("@openzeppelin/test-helpers");
@@ -89,7 +88,7 @@ describe("Ubiroll", () => {
       "UbiGamesVault",
       owner
     )) as UbiGamesVault__factory;
-    vault = await VaultFactory.connect(owner).deploy(ubi.address, 25);
+    vault = await VaultFactory.connect(owner).deploy(ubi.address, burnerAddress, 25);
 
     const UbirollFactory = (await ethers.getContractFactory(
       "Ubiroll",

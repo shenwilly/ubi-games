@@ -5,7 +5,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {IUBI} from "./interfaces/IUBI.sol";
 
 contract UbiGamesVault is Ownable {
     using SafeMath for uint256;
@@ -17,14 +16,16 @@ contract UbiGamesVault is Ownable {
     }
 
     address public ubi;
+    address public burner;
     mapping(address => bool) public registeredGames;
     uint256 public burnPercentage;
     uint256 public pendingBurn;
 
     event Burn(uint256 amount);
 
-    constructor(address _ubi, uint256 _burnPercentage) {
+    constructor(address _ubi, address _burner, uint256 _burnPercentage) {
         ubi = _ubi;
+        burner = _burner;
         burnPercentage = _burnPercentage;
     }
 
@@ -44,13 +45,13 @@ contract UbiGamesVault is Ownable {
         IERC20(ubi).transfer(_to, _amount);
     }
 
-    function burnUbi() public {
+    function withdrawUbiToBurn() public {
         require(pendingBurn > 0, "Nothing to burn");
-        IUBI(ubi).burn(pendingBurn);
+
+        IERC20(ubi).transfer(burner, pendingBurn);
+        pendingBurn = 0;
 
         emit Burn(pendingBurn);
-
-        pendingBurn = 0;
     }
 
     // WARNING: can empty vault when games have not not resolved
@@ -69,6 +70,10 @@ contract UbiGamesVault is Ownable {
 
     function setUbi(address _ubi) public onlyOwner {
         ubi = _ubi;
+    }
+
+    function setBurner(address _burner) public onlyOwner {
+        burner = _burner;
     }
 
     function setBurnPercentage(uint256 _burnPercentage) public onlyOwner {

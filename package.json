@@ -1,6 +1,6 @@
 {
-  "name": "solidity-ts-dev-stack-example",
-  "version": "0.0.2",
+  "name": "ubi-games",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -40,6 +40,7 @@
   "devDependencies": {
     "@chainlink/contracts": "^0.1.9",
     "@chainlink/token": "smartcontractkit/LinkToken",
+    "@maticnetwork/maticjs": "^2.0.43",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",

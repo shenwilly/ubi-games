@@ -23,7 +23,11 @@ contract UbiGamesVault is Ownable {
 
     event Burn(uint256 amount);
 
-    constructor(address _ubi, address _burner, uint256 _burnPercentage) {
+    constructor(
+        address _ubi,
+        address _burner,
+        uint256 _burnPercentage
+    ) {
         ubi = _ubi;
         burner = _burner;
         burnPercentage = _burnPercentage;
@@ -81,6 +85,6 @@ contract UbiGamesVault is Ownable {
     }
 
     function getUbiBalance() public view returns (uint256) {
-        return IERC20(ubi).balanceOf(address(this));
+        return IERC20(ubi).balanceOf(address(this)) - pendingBurn;
     }
 }

@@ -5,9 +5,9 @@ import { MaticPOSClient } from '@maticnetwork/maticjs';
 async function main() {
   const [signer] = await ethers.getSigners();
 
-  const burnTxHash = "0x6c246136331cc59d0b10f34635245ad468b13025a4b697ed909664de4d1b3282";
+  const burnTxHash = "0xfd107cdc40a5c5a7bb53a7d0b6e02c3b497d571ccc40a05c5c5022e67fa23806";
   const rootManagerAddress = "0xa0c68c638235ee32657e8f720a23cec1bfc77c77";
-  const gasPrice = 18;
+  const gasPrice = 13;
 
   const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
   const maticPOSClient = new MaticPOSClient({
@@ -16,7 +16,7 @@ async function main() {
     parentProvider: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
     maticProvider: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`
   });
-
+  
   const exitCalldata = await maticPOSClient
     .exitERC20(burnTxHash, { from: signer.address, encodeAbi: true });
   console.log(exitCalldata.data);

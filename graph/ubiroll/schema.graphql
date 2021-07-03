@@ -1,6 +1,9 @@
-type ExampleEntity @entity {
+type Bet @entity {
   id: ID!
-  count: BigInt!
-  id: BigInt! # uint256
-  player: Bytes! # address
+  player: Bytes!
+  chance: BigInt!,
+  amount: BigInt!,
+  result: BigInt,
+  requestId: Bytes!,
+  win: Boolean
 }

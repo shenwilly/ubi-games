@@ -1,0 +1,30 @@
+specVersion: 0.0.2
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: Ubiroll
+    network: matic
+    source:
+      address: "0x84a5047e5d8eb5d009b0189e41256c9d6613a847"
+      abi: Ubiroll
+      startBlock: 16289643
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.2
+      language: wasm/assemblyscript
+      entities:
+        - BetCreated
+        - BetFinalized
+        - OwnershipTransferred
+      abis:
+        - name: Ubiroll
+          file: ./abis/Ubiroll.json
+      eventHandlers:
+        - event: BetCreated(indexed uint256,indexed address,uint256,uint256,bytes32)
+          handler: handleBetCreated
+        - event: BetFinalized(indexed uint256,indexed address,uint256,uint256,bool)
+          handler: handleBetFinalized
+        - event: OwnershipTransferred(indexed address,indexed address)
+          handler: handleOwnershipTransferred
+      file: ./src/mapping.ts

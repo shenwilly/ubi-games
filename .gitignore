@@ -9,3 +9,5 @@ yarn.lock
 yarn-error.log
 .vscode/settings.json
 graph/ubiroll/generated
+graph/ubiroll/.DS_Store
+.DS_Store

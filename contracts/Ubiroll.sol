@@ -125,10 +125,6 @@ contract Ubiroll is IUbiGame, Ownable {
         emit BetFinalized(bet.id, bet.player, bet.chance, 0, false);
     }
 
-    // function withdrawToken(address _token, uint256 _amount) public onlyOwner {
-    //     IERC20(_token).transfer(msg.sender, _amount);
-    // }
-
     function maxPrize() public view returns (uint256) {
         uint256 balance = IUbiGamesVault(vault).getUbiBalance();
         return balance.div(100);

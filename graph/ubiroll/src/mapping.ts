@@ -17,12 +17,13 @@ export function handleBetCreated(event: BetCreated): void {
     bet.amount = event.params.amount;
     bet.requestId = event.params.requestId;
     bet.timestamp = event.block.timestamp;
+    bet.txHash = event.transaction.hash;
 
     let ubiroll = Ubiroll.bind(event.address);
     let betObj = ubiroll.bets(event.params.id);
     bet.prize = betObj.value5;
     bet.finished = false;
-    
+
 		bet.save()
 	} 
 }

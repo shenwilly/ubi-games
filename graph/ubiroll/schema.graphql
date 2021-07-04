@@ -9,4 +9,5 @@ type Bet @entity {
   win: Boolean,
   finished: Boolean!,
   timestamp: BigInt!,
+  txHash: Bytes!,
 }

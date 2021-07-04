@@ -3,7 +3,10 @@ type Bet @entity {
   player: Bytes!
   chance: BigInt!,
   amount: BigInt!,
+  prize: BigInt,
   result: BigInt,
   requestId: Bytes!,
-  win: Boolean
+  win: Boolean,
+  finished: Boolean!,
+  timestamp: BigInt!,
 }
